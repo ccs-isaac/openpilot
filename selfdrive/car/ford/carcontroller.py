@@ -29,6 +29,8 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.CAN = fordcan.CanBus(CP)
     self.frame = 0
+    self.brake_engaged = False
+
 
     self.apply_curvature_last = 0
     self.main_on_last = False
@@ -38,6 +40,9 @@ class CarController:
   def update(self, CC, CS, now_nanos):
     can_sends = []
 
+    BRAKE_DISENGAGE_THRESHOLD = 0.1
+    BRAKE_ENGAGE_THRESHOLD = -0.35
+    
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -89,8 +94,19 @@ class CarController:
       gas = accel
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
         gas = CarControllerParams.INACTIVE_GAS
+
+      if self.brake_engaged:
+        if accel > BRAKE_DISENGAGE_THRESHOLD:
+          self.brake_engaged = False
+      else:
+        if accel < BRAKE_ENGAGE_THRESHOLD:
+          self.brake_engaged = True
+
+      # Modify the decel logic to include hysteresis
+      actuate_brake = self.brake_engaged and CC.longActive
+      
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=V_CRUISE_MAX))
+      can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, actuate_brake, v_ego_kph=V_CRUISE_MAX))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
