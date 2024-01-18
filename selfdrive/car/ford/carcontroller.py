@@ -1,6 +1,5 @@
 from cereal import car
 from openpilot.common.numpy_fast import clip
-from openpilot.common.conversions import Conversions as CV
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
@@ -29,6 +28,8 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.CAN = fordcan.CanBus(CP)
     self.frame = 0
+    self.brake_engaged = False
+
 
     self.apply_curvature_last = 0
     self.main_on_last = False
@@ -38,6 +39,9 @@ class CarController:
   def update(self, CC, CS, now_nanos):
     can_sends = []
 
+    BRAKE_DISENGAGE_THRESHOLD = 0.1
+    BRAKE_ENGAGE_THRESHOLD = -0.35
+    
     actuators = CC.actuators
     hud_control = CC.hudControl
 
@@ -89,8 +93,19 @@ class CarController:
       gas = accel
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
         gas = CarControllerParams.INACTIVE_GAS
+
+      if self.brake_engaged:
+        if accel > BRAKE_DISENGAGE_THRESHOLD:
+          self.brake_engaged = False
+      else:
+        if accel < BRAKE_ENGAGE_THRESHOLD:
+          self.brake_engaged = True
+
+      # Modify the decel logic to include hysteresis
+      actuate_brake = self.brake_engaged and CC.longActive
+      
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=40 * CV.MPH_TO_KPH))
+      can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, actuate_brake))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
@@ -101,7 +116,7 @@ class CarController:
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive,
                                          fcw_alert, CS.out.cruiseState.standstill, hud_control,
-                                         CS.acc_tja_status_stock_values))
+                                         CS.acc_tja_status_stock_values, CS.gac_tr_cluster))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
