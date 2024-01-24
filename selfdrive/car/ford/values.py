@@ -63,7 +63,6 @@ class RADAR:
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
 
 DBC[CAR.F_150_MK14] = dbc_dict("ford_lincoln_base_pt", RADAR.STEER_ASSIST_DATA)
-DBC[CAR.F_150_LIGHTNING_MK1] = dbc_dict("ford_lincoln_base_pt", RADAR.STEER_ASSIST_DATA)
 DBC[CAR.MUSTANG_MACH_E_MK1] = dbc_dict("ford_lincoln_base_pt", RADAR.STEER_ASSIST_DATA)
 
 
