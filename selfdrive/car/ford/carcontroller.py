@@ -78,7 +78,7 @@ class CarController:
         # TODO: extended mode
         mode = 2 if CC.latActive else 0
         counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
-        can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, -5.12, -0.5., -0.02, -0.001024, counter))
+        can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, -5.12, -0.5, -0.02, -0.001024, counter))
       else:
         can_sends.append(fordcan.create_lat_ctl_msg(self.packer, self.CAN, CC.latActive, 0., 0., -apply_curvature, 0.))
 
