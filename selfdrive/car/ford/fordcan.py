@@ -102,10 +102,10 @@ def create_lat_ctl2_msg(packer, CAN: CanBus, mode: int, path_offset: float, path
                                                 #       3=SafeRampOut, 4-7=NotUsed [0|7]
     "LatCtlRampType_D_Rq": 0,                   # 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
     "LatCtlPrecision_D_Rq": 1,                  # 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
-    "LatCtlPathOffst_L_Actl": 5.12,      # [-5.12|5.11] meter
-    "LatCtlPath_An_Actl": 0.5,           # [-0.5|0.5235] radians
-    "LatCtlCurv_No_Actl": 0.02,            # [-0.02|0.02094] 1/meter
-    "LatCtlCrv_NoRate2_Actl": 0.001024,   # [-0.001024|0.001023] 1/meter^2
+    "LatCtlPathOffst_L_Actl": 2,      # [-5.12|5.11] meter
+    "LatCtlPath_An_Actl": 0.05,           # [-0.5|0.5235] radians
+    "LatCtlCurv_No_Actl": 0.01,            # [-0.02|0.02094] 1/meter
+    "LatCtlCrv_NoRate2_Actl": 0,   # [-0.001024|0.001023] 1/meter^2
     "HandsOffCnfm_B_Rq": 0,                     # 0=Inactive, 1=Active [0|1]
     "LatCtlPath_No_Cnt": counter,               # [0|15]
     "LatCtlPath_No_Cs": 0,                      # [0|255]
