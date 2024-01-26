@@ -44,7 +44,7 @@ class CarController:
     can_sends = []
     self.sm.update()
 
-    if self.sm.update['modelV2']:
+    if self.sm.updated['modelV2']:
       _lat = self.sm['modelV2'].acceleration.y
       self.lat_accel = _lat[0] if len(_lat) else 0.
     
