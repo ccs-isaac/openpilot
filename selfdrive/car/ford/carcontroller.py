@@ -42,7 +42,8 @@ class CarController:
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
-    self.sm.update()
+    if self.frame % 5 == 0:
+      self.sm.update()
 
     if self.sm.updated['modelV2']:
       _lat = self.sm['modelV2'].acceleration.y
