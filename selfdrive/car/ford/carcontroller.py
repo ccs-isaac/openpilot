@@ -1,4 +1,5 @@
 from cereal import car
+import cereal.messaging as messaging
 from openpilot.common.numpy_fast import clip
 from openpilot.common.conversions import Conversions as CV
 from opendbc.can.packer import CANPacker
@@ -30,7 +31,9 @@ class CarController:
     self.CAN = fordcan.CanBus(CP)
     self.frame = 0
     self.brake_engaged = False
+    self.lat_accel = 0.
 
+    self.sm = messaging.SubMaster(['modelV2'])
 
     self.apply_curvature_last = 0
     self.main_on_last = False
@@ -39,7 +42,12 @@ class CarController:
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
+    self.sm.update(0)
 
+    if self.sm.update['modelV2']:
+      _lat = self.sm['modelV2'].acceleration.y
+      self.lat_accel = _lat[0] if len(_lat) else 0.
+    
     BRAKE_DISENGAGE_THRESHOLD = 0.1
     BRAKE_ENGAGE_THRESHOLD = -0.35
     
@@ -78,7 +86,7 @@ class CarController:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
         counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
-        can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, 0., 0., -apply_curvature, 0., counter))
+        can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, self.lat_accel, 0., -apply_curvature, 0., counter))
       else:
         can_sends.append(fordcan.create_lat_ctl_msg(self.packer, self.CAN, CC.latActive, 0., 0., -apply_curvature, 0.))
 
