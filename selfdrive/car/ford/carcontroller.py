@@ -10,6 +10,17 @@ from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+def calculate_angular_rate(lateral_acceleration, curvature):
+  """
+  Calculate the angular rate in radians per second.
+
+  :param lateral_acceleration: The desired lateral acceleration in m/s^2.
+  :param curvature: The curvature of the path (reciprocal of radius).
+  :return: Angular rate in radians per second.
+  """
+  angular_rate = (lateral_acceleration * curvature) ** 0.5
+  return angular_rate
+
 
 def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw):
   # No blending at low speed due to lack of torque wind-up and inaccurate current curvature
@@ -81,13 +92,14 @@ class CarController:
       else:
         apply_curvature = 0.
 
+      desired_path = calculate_angular_rate(self.lat_accel, apply_curvature)
       self.apply_curvature_last = apply_curvature
 
       if self.CP.carFingerprint in CANFD_CAR:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
         counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
-        can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, -self.lat_accel, 0., -apply_curvature, 0., counter))
+        can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, 0., desired_path, -apply_curvature, 0., counter))
       else:
         can_sends.append(fordcan.create_lat_ctl_msg(self.packer, self.CAN, CC.latActive, 0., 0., -apply_curvature, 0.))
 
